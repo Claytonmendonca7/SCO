@@ -3,7 +3,7 @@ const express = require('express');
 const sql = require('mssql');
 const cors = require('cors');
 const path = require('path');
-const stripe = require('stripe')('sk_test_51S2SMcGqRQEokyaTISnPn6K6JbRBpVEaKHcdr60H1XMzBS6qn3zaBjGCK85NIauOPU0KvSq3lid7fiTHtGbrGkVf00S8iY80Kj'); // TODO: move to env in prod
+const stripe = require('stripe')('sk_test_51S2SMcGqRQEokyaTISnPn6KU0KvSq3lid7fiTHtGbrGkVf00S8iY80Kj'); // TODO: move to env in prod
 
 const app = express();
 const port = 3000;
