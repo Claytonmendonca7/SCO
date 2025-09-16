@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ALITON</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6; /* Lighter background */
+            color: #1f2937; /* Darker text for contrast */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container-box {
+            background-color: #ffffff; /* White card background */
+            border-radius: 1rem;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+        }
+        .message-box, .password-prompt {
+            background: #ffffff;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,.1), 0 2px 4px -1px rgba(0,0,0,.06);
+            border: 1px solid #e5e7eb;
+            color: #1f2937;
+        }
+        .message-box-overlay {background: rgba(206, 206, 206, 0.5);}
+        .input-field {
+            background-color: #f9fafb;
+            color: #1f2937;
+            border: 1px solid #d1d5db;
+        }
+        .input-field::placeholder {
+            color: #9ca3af;
+        }
+        .button-primary {
+            background-color: #4f46e5; /* Indigo */
+            color: white;
+            transition-property: background-color;
+            transition-duration: 300ms;
+        }
+        .button-primary:hover {
+            background-color: #4338ca;
+        }
+        .button-secondary {
+            background-color: #e5e7eb; /* Light gray */
+            color: #1f2937;
+            transition-property: background-color;
+            transition-duration: 300ms;
+        }
+        .button-secondary:hover {
+            background-color: #d1d5db;
+        }
+        .filter-tab, .chart-metric-tab {
+            cursor: pointer;
+            padding: 0.75rem 1.5rem;
+            font-weight: 500;
+            border-radius: 9999px;
+            transition: all 0.2s;
+            color: #4b5563;
+        }
+        .filter-tab.active, .chart-metric-tab.active {
+            background-color: #4f46e5;
+            color: white;
+            box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.4);
+        }
+        .data-card {
+            background-color: #f9fafb;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        .data-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-top: 0.5rem;
+        }
+        .text-blue-600 { color: #4f46e5; }
+        .text-green-600 { color: #10b981; }
+        .text-purple-600 { color: #8b5cf6; }
+        .rating-good { color: #10b981; }
+        .rating-medium { color: #fbbf24; }
+        .rating-bad { color: #ef4444; }
+        .error-message { color: #ef4444; }
+    </style>
+</head>
+<body>
+    <div class="w-full max-w-4xl mx-auto p-4 md:p-8">
+        <div id="login-container" class="container-box p-8 text-center">
+            <h1 class="text-4xl font-bold mb-4 text-gray-800">ALITON</h1>
+            <p class="text-gray-500 mb-6">Register this device to a specific store.</p>
+            <form id="login-form" class="space-y-6">
+                <div>
+                    <input type="text" id="storeId" placeholder="Store ID (e.g., 1)" required class="w-full px-4 py-3 input-field rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                </div>
+                <div>
+                    <input type="password" id="password" placeholder="Password (e.g., pass123)" required class="w-full px-4 py-3 input-field rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                </div>
+                <button type="submit" id="login-button" class="w-full button-primary font-semibold py-3 rounded-lg">Login & Register</button>
+            </form>
+        </div>
+
+        <div id="post-login-container" class="hidden container-box p-8 text-center">
+            <h1 class="text-3xl font-bold mb-4 text-gray-800">Login Successful!</h1>
+            <p class="text-gray-500 mb-6">Welcome back, Employee. Please choose an action.</p>
+            <div class="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4">
+                <button id="dashboard-button" class="w-full md:w-1/2 button-primary font-semibold py-4 rounded-lg">Go to Dashboard</button>
+                <a href="index.html" class="w-full md:w-1/2 button-secondary font-semibold py-4 rounded-lg flex items-center justify-center">Go to Checkout Page</a>
+            </div>
+        </div>
+
+        <div id="dashboard-container" class="hidden container-box p-8">
+            <div class="flex justify-between items-center mb-6">
+                <h1 class="text-3xl font-bold text-center text-gray-800">Store Dashboard</h1>
+                <button onclick="window.location.href='checkout_login.html'" class="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300 transition-colors duration-300">🏠 Home</button>
+            </div>
+            <p class="text-center text-gray-500 mb-4">You are logged in with Store ID: <span id="storeId-span" class="font-bold text-gray-800"></span></p>
+
+            <div class="flex justify-center items-center gap-4 mb-8 bg-gray-200 p-2 rounded-full">
+                <button id="daily-tab" class="filter-tab active" data-filter="daily">Daily</button>
+                <button id="monthly-tab" class="filter-tab" data-filter="monthly">Monthly</button>
+                <button id="yearly-tab" class="filter-tab" data-filter="yearly">Yearly</button>
+            </div>
+
+            <div id="filter-inputs" class="flex flex-col sm:flex-row justify-center items-center gap-4 mb-8">
+                <div id="daily-filter" class="w-full sm:w-auto flex items-center gap-4">
+                    <label for="dashboard-date-picker" class="text-gray-500">Date:</label>
+                    <input type="date" id="dashboard-date-picker" class="p-2 input-field rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 w-full" />
+                </div>
+                <div id="monthly-filter" class="w-full sm:w-auto flex items-center gap-4 hidden">
+                    <label for="dashboard-month-picker" class="text-gray-500">Month:</label>
+                    <input type="month" id="dashboard-month-picker" class="p-2 input-field rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 w-full" />
+                </div>
+                <div id="yearly-filter" class="w-full sm:w-auto flex items-center gap-4 hidden">
+                    <label for="dashboard-year-picker" class="text-gray-500">Year:</label>
+                    <input type="number" id="dashboard-year-picker" placeholder="YYYY" class="p-2 input-field rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 w-full" />
+                </div>
+                <button id="view-data-btn" class="button-primary font-semibold px-6 py-2 rounded-lg">View</button>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="data-card">
+                    <h2 class="text-xl font-semibold text-gray-500"><span id="sales-title">Sales</span></h2>
+                    <p id="sales-value" class="data-value text-blue-600">₹0.00</p>
+                </div>
+                <div class="data-card">
+                    <h2 class="text-xl font-semibold text-gray-500">Average Basket Value</h2>
+                    <p id="abv-value" class="data-value text-green-600">₹0.00</p>
+                </div>
+                <div class="data-card">
+                    <h2 class="text-xl font-semibold text-gray-500">Average Basket Quantity</h2>
+                    <p id="abq-value" class="data-value text-purple-600">0.00</p>
+                </div>
+                <div class="data-card">
+                    <h2 class="text-xl font-semibold text-gray-500"><span id="rating-title">Rating</span></h2>
+                    <p id="rating-value" class="data-value">0.00</p>
+                </div>
+            </div>
+            
+            <div class="mt-8 flex justify-end">
+                <button id="view-chart-btn" class="button-primary font-semibold px-6 py-2 rounded-lg">View Sales Chart</button>
+            </div>
+        </div>
+
+        <div id="chart-page" class="page container-box p-8 hidden flex-col">
+            <div class="flex justify-between items-center mb-6">
+                <button id="back-to-dashboard-btn" class="button-secondary px-4 py-2 rounded-lg">Back to Dashboard</button>
+                <h2 class="text-2xl font-bold text-gray-800">Last 7 Days Data</h2>
+            </div>
+            
+            <div class="bg-gray-200 p-2 rounded-full mb-8 flex justify-center items-center gap-4">
+                <button id="sales-chart-tab" class="chart-metric-tab active" data-metric="sales">Sales</button>
+                <button id="abv-chart-tab" class="chart-metric-tab" data-metric="abv">ABV</button>
+                <button id="abq-chart-tab" class="chart-metric-tab" data-metric="abq">ABQ</button>
+                <button id="rating-chart-tab" class="chart-metric-tab" data-metric="rating">Rating</button>
+            </div>
+
+            <div class="bg-gray-50 p-6 rounded-lg shadow-xl h-96">
+                <canvas id="salesChart" class="w-full h-full"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div id="message-box" class="message-box fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-100 p-6 hidden flex-col items-center gap-4">
+        <p id="message-text" class="text-center text-gray-700"></p>
+        <button id="message-ok-button" class="px-4 py-2 button-primary font-semibold rounded-lg">OK</button>
+    </div>
+    <div id="message-box-overlay" class="message-box-overlay fixed inset-0 z-101 hidden"></div>
+
+    <div id="password-prompt" class="password-prompt fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-101 p-6 hidden flex-col items-center gap-4">
+        <h2 class="text-xl font-semibold text-center text-gray-800 mb-4">Enter Employee Password</h2>
+        <p id="password-error-message" class="error-message"></p>
+        <input type="password" id="dashboard-password" placeholder="Password" class="w-full px-4 py-3 input-field rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 mb-4" />
+        <div class="flex space-x-4 w-full">
+            <button id="password-submit-btn" class="flex-grow button-primary font-semibold py-3 rounded-lg">Submit</button>
+            <button id="password-cancel-btn" class="flex-grow button-secondary font-semibold py-3 rounded-lg">Cancel</button>
+        </div>
+    </div>
+
+    <script>
+    const pages = {
+        login: document.getElementById('login-container'),
+        postLogin: document.getElementById('post-login-container'),
+        dashboard: document.getElementById('dashboard-container'),
+        chart: document.getElementById('chart-page')
+    };
+
+    let postLoginRedirect = false;
+
+    function showMessage(message, redirect = false) {
+        document.getElementById('message-text').textContent = message;
+        document.getElementById('message-box').style.display = 'flex';
+        // The line to show the overlay is now removed.
+        postLoginRedirect = redirect;
+    }
+
+    document.getElementById('message-ok-button').addEventListener('click', () => {
+        document.getElementById('message-box').style.display = 'none';
+        // The line to hide the overlay is now removed.
+        if (postLoginRedirect) {
+            showPostLoginPage();
+        }
+    });
+
+    function showLoginPage() {
+        Object.values(pages).forEach(p => p.classList.add('hidden'));
+        pages.login.classList.remove('hidden');
+    }
+
+    function showPostLoginPage() {
+        Object.values(pages).forEach(p => p.classList.add('hidden'));
+        pages.postLogin.classList.remove('hidden');
+    }
+
+    let activeFilterType = 'daily';
+    let salesChart;
+    let historicalDatasets = {};
+
+    function showDashboard() {
+        Object.values(pages).forEach(p => p.classList.add('hidden'));
+        pages.dashboard.classList.remove('hidden');
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('dashboard-date-picker').value = today;
+        setActiveFilter('daily');
+        fetchDashboardData('daily', today);
+    }
+
+    function showChartPage() {
+        Object.values(pages).forEach(p => p.classList.add('hidden'));
+        pages.chart.classList.remove('hidden');
+        fetchHistoricalData();
+    }
+
+    // UPDATED FUNCTION: Show password prompt without the overlay
+    function showPasswordPrompt() {
+        document.getElementById('password-prompt').style.display = 'flex';
+        // The line to show the overlay is now removed.
+        document.getElementById('dashboard-password').focus();
+    }
+
+    // UPDATED FUNCTION: Hide password prompt without the overlay
+    function hidePasswordPrompt() {
+        document.getElementById('password-prompt').style.display = 'none';
+        // The line to hide the overlay is now removed.
+        document.getElementById('dashboard-password').value = '';
+        document.getElementById('password-error-message').textContent = '';
+    }
+
+    function setActiveFilter(filterType) {
+        document.querySelectorAll('.filter-tab').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        document.getElementById(`${filterType}-tab`).classList.add('active');
+
+        document.getElementById('daily-filter').classList.add('hidden');
+        document.getElementById('monthly-filter').classList.add('hidden');
+        document.getElementById('yearly-filter').classList.add('hidden');
+        document.getElementById(`${filterType}-filter`).classList.remove('hidden');
+        
+        activeFilterType = filterType;
+    }
+
+    window.onload = () => {
+        const storedStoreId = sessionStorage.getItem('storeId');
+        if (storedStoreId) {
+            document.getElementById('storeId-span').textContent = storedStoreId;
+            showPostLoginPage();
+        } else {
+            showLoginPage();
+        }
+    };
+
+    const loginForm = document.getElementById('login-form');
+    loginForm.addEventListener('submit', async (e) => {
+        // Prevent the default form submission behavior
+        e.preventDefault();
+
+        const storeId = document.getElementById('storeId').value.trim();
+        const password = document.getElementById('password').value.trim();
+
+        try {
+            const response = await fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ storeId, password })
+            });
+
+            const data = await response.json();
+            if (!response.ok) {
+                // Throw an error if the response is not ok (e.g., 401 Unauthorized)
+                throw new Error(data.message || 'Login failed.');
+            }
+
+            sessionStorage.setItem('storeId', storeId);
+            // On success, show the message with the redirect flag
+            showMessage("Login successful! 🎉", true);
+        } catch (error) {
+            console.error("Login Error:", error);
+            // On failure, show an error message
+            showMessage(error.message);
+        }
+    });
+
+    const dashboardButton = document.getElementById('dashboard-button');
+    dashboardButton.addEventListener('click', () => {
+        showPasswordPrompt();
+    });
+
+    const passwordSubmitBtn = document.getElementById('password-submit-btn');
+    passwordSubmitBtn.addEventListener('click', async () => {
+        const storeId = sessionStorage.getItem('storeId');
+        const password = document.getElementById('dashboard-password').value.trim();
+
+        document.getElementById('password-error-message').textContent = '';
+
+        if (!storeId || !password) {
+            document.getElementById('password-error-message').textContent = "Please enter a password.";
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ storeId, password })
+            });
+
+            const data = await response.json();
+            if (!response.ok) {
+                document.getElementById('password-error-message').textContent = data.message || data.error || 'Login failed.';
+                return;
+            }
+
+            hidePasswordPrompt();
+            showDashboard();
+        } catch (error) {
+            console.error("Dashboard login error:", error);
+            document.getElementById('password-error-message').textContent = "Could not connect to the server.";
+        }
+    });
+
+    document.getElementById('password-cancel-btn').addEventListener('click', () => {
+        hidePasswordPrompt();
+    });
+
+    document.getElementById('dashboard-password').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            passwordSubmitBtn.click();
+        }
+    });
+
+    document.querySelectorAll('.filter-tab').forEach(tab => {
+        tab.addEventListener('click', (e) => {
+            setActiveFilter(e.target.dataset.filter);
+        });
+    });
+
+    document.getElementById('view-chart-btn').addEventListener('click', () => {
+        showChartPage();
+    });
+
+    document.getElementById('back-to-dashboard-btn').addEventListener('click', () => {
+        showDashboard();
+    });
+
+    document.getElementById('view-data-btn').addEventListener('click', () => {
+        let dateValue;
+        if (activeFilterType === 'daily') {
+            dateValue = document.getElementById('dashboard-date-picker').value;
+        } else if (activeFilterType === 'monthly') {
+            dateValue = document.getElementById('dashboard-month-picker').value;
+        } else if (activeFilterType === 'yearly') {
+            dateValue = document.getElementById('dashboard-year-picker').value + '-01-01';
+        }
+
+        if (dateValue) {
+            fetchDashboardData(activeFilterType, dateValue);
+        } else {
+            showMessage('Please select a valid date, month, or year.');
+        }
+    });
+
+    async function fetchDashboardData(filterType, selectedDate) {
+        const storeId = sessionStorage.getItem('storeId');
+        if (!storeId) {
+            showMessage("No active session. Please log in first.");
+            showLoginPage();
+            return;
+        }
+        
+        let dateLabel;
+        const dateObj = new Date(selectedDate);
+        
+        if (filterType === 'daily') {
+            dateLabel = dateObj.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+        } else if (filterType === 'monthly') {
+            dateLabel = dateObj.toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
+        } else if (filterType === 'yearly') {
+            dateLabel = dateObj.toLocaleDateString('en-US', { year: 'numeric' });
+        }
+
+        document.getElementById('sales-title').textContent = `Sales ${filterType === 'daily' ? 'on' : 'in'} ${dateLabel}`;
+        document.getElementById('rating-title').textContent = `Rating ${filterType === 'daily' ? 'on' : 'in'} ${dateLabel}`;
+
+        try {
+            const response = await fetch(`/api/dashboard/${storeId}?filterType=${filterType}&date=${selectedDate}`);
+            if (!response.ok) throw new Error('Failed to fetch dashboard data.');
+            const data = await response.json();
+            
+            document.getElementById('sales-value').textContent = `₹${data.sales}`;
+            document.getElementById('abv-value').textContent = `₹${data.abv}`;
+            document.getElementById('abq-value').textContent = data.abq;
+            document.getElementById('rating-value').textContent = data.rating;
+            
+            const ratingEl = document.getElementById('rating-value');
+            const ratingVal = parseFloat(data.rating);
+
+            ratingEl.classList.remove('rating-good', 'rating-medium', 'rating-bad');
+            if (ratingVal > 2.5) ratingEl.classList.add('rating-good');
+            else if (ratingVal >= 1.5) ratingEl.classList.add('rating-medium');
+            else ratingEl.classList.add('rating-bad');
+        } catch (error) {
+            console.error("Dashboard Fetch Error:", error);
+            showMessage("Failed to load dashboard data. Please check if the backend server is running.");
+        }
+    }
+    
+    async function fetchHistoricalData() {
+        const storeId = sessionStorage.getItem('storeId');
+        if (!storeId) {
+            showMessage("No active session. Please log in first.");
+            return;
+        }
+        
+        try {
+            const response = await fetch(`/api/dashboard-history/${storeId}`);
+            if (!response.ok) throw new Error('Failed to fetch historical data.');
+            const data = await response.json();
+            
+            const allDates = [];
+            const today = new Date();
+            for (let i = 6; i >= 0; i--) {
+                const date = new Date(today);
+                date.setDate(today.getDate() - i);
+                allDates.push(date.toISOString().split('T')[0]);
+            }
+
+            const historicalDataMap = new Map(data.history.map(item => [item.date, item]));
+            historicalDatasets = {
+                sales: [],
+                abv: [],
+                abq: [],
+                rating: []
+            };
+            
+            allDates.forEach(date => {
+                const item = historicalDataMap.get(date);
+                if (item) {
+                    historicalDatasets.sales.push(Number(item.sales));
+                    historicalDatasets.abv.push(Number(item.abv));
+                    historicalDatasets.abq.push(Number(item.abq));
+                    historicalDatasets.rating.push(Number(item.rating));
+                } else {
+                    historicalDatasets.sales.push(null);
+                    historicalDatasets.abv.push(null);
+                    historicalDatasets.abq.push(null);
+                    historicalDatasets.rating.push(null);
+                }
+            });
+            
+            renderSalesChart(allDates, historicalDatasets);
+            updateChartData('sales');
+        } catch (error) {
+            console.error("Historical Data Fetch Error:", error);
+            showMessage("Failed to load historical sales data.");
+        }
+    }
+    
+    function renderSalesChart(labels, datasets) {
+        const ctx = document.getElementById('salesChart').getContext('2d');
+        if (salesChart) {
+            salesChart.destroy();
+        }
+
+        salesChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Sales',
+                        data: datasets.sales,
+                        borderColor: '#4f46e5',
+                        backgroundColor: 'rgba(79, 70, 229, 0.2)',
+                        borderWidth: 2,
+                        tension: 0.1,
+                        pointBackgroundColor: '#4f46e5',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: '#4f46e5',
+                        fill: true
+                    },
+                    {
+                        label: 'ABV',
+                        data: datasets.abv,
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                        borderWidth: 2,
+                        tension: 0.1,
+                        pointBackgroundColor: '#10b981',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: '#10b981',
+                        fill: true,
+                        hidden: true
+                    },
+                    {
+                        label: 'ABQ',
+                        data: datasets.abq,
+                        borderColor: '#8b5cf6',
+                        backgroundColor: 'rgba(139, 92, 246, 0.2)',
+                        borderWidth: 2,
+                        tension: 0.1,
+                        pointBackgroundColor: '#8b5cf6',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: '#8b5cf6',
+                        fill: true,
+                        hidden: true
+                    },
+                    {
+                        label: 'Rating',
+                        data: datasets.rating,
+                        borderColor: '#ef4444',
+                        backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                        borderWidth: 2,
+                        tension: 0.1,
+                        pointBackgroundColor: '#ef4444',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: '#ef4444',
+                        fill: true,
+                        hidden: true
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Value',
+                            color: '#4b5563'
+                        },
+                        ticks: {
+                            color: '#4b5563'
+                        },
+                        grid: {
+                            color: '#e5e7eb'
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            color: '#4b5563'
+                        },
+                        grid: {
+                            color: '#e5e7eb'
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    function updateChartData(metric) {
+        if (!salesChart) return;
+        
+        salesChart.data.datasets.forEach(dataset => {
+            dataset.hidden = (dataset.label.toLowerCase() !== metric.toLowerCase());
+        });
+        salesChart.update();
+        
+        document.querySelectorAll('.chart-metric-tab').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        document.getElementById(`${metric.toLowerCase()}-chart-tab`).classList.add('active');
+    }
+
+    document.getElementById('sales-chart-tab').addEventListener('click', () => updateChartData('Sales'));
+    document.getElementById('abv-chart-tab').addEventListener('click', () => updateChartData('ABV'));
+    document.getElementById('abq-chart-tab').addEventListener('click', () => updateChartData('ABQ'));
+    document.getElementById('rating-chart-tab').addEventListener('click', () => updateChartData('Rating'));
+    </script>
+</body>
+</html>

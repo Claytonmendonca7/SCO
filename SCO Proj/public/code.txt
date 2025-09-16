@@ -1,0 +1,1352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Checkout Project Login</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+    .message-box { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 100; padding: 1.5rem; background: white; border-radius: 0.5rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,.1), 0 2px 4px -1px rgba(0,0,0,.06); display: none; flex-direction: column; align-items: center; gap: 1rem; }
+    .message-box-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 99; display: none; }
+    .rating-value { font-size: 3rem; font-weight: bold; margin-top: 0.5rem; }
+    .password-prompt { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 101; background: white; padding: 2rem; border-radius: 0.5rem; box-shadow: 0 10px 15px -3px rgba(0,0,0,.1), 0 4px 6px -2px rgba(0,0,0,.05); }
+    .error-message { color: #ef4444; font-size: 0.875rem; text-align: center; margin-bottom: 0.75rem; }
+    .filter-tab, .chart-metric-tab { cursor: pointer; padding: 0.75rem 1.5rem; font-weight: 500; border-radius: 9999px; transition: all 0.2s; }
+    .filter-tab.active, .chart-metric-tab.active { background-color: #3b82f6; color: white; box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.5); }
+  </style>
+</head>
+<body>
+  <div class="w-full max-w-4xl mx-auto p-4 md:p-8">
+    <div id="login-container" class="bg-white p-8 rounded-lg shadow-xl text-center">
+      <h1 class="text-3xl font-bold mb-4 text-gray-800">Divyansh Sons Ltd.</h1>
+      <p class="text-gray-600 mb-6">Register this device to a specific store.</p>
+      <form id="login-form" class="space-y-6">
+        <div><input type="text" id="storeId" placeholder="Store ID (e.g., 1)" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
+        <div><input type="password" id="password" placeholder="Password (e.g., pass123)" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
+        <button type="submit" id="login-button" class="w-full bg-blue-600 text-white font-semibold py-3 rounded-lg hover:bg-blue-700 transition-colors duration-300">Login & Register</button>
+      </form>
+    </div>
+
+    <div id="post-login-container" class="hidden bg-white p-8 rounded-lg shadow-xl text-center">
+      <h1 class="text-3xl font-bold mb-4 text-gray-800">Login Successful!</h1>
+      <p class="text-gray-600 mb-6">Welcome back, Employee. Please choose an action.</p>
+      <div class="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4">
+        <button id="dashboard-button" class="w-full md:w-1/2 bg-green-600 text-white font-semibold py-4 rounded-lg hover:bg-green-700 transition-colors duration-300">Go to Dashboard</button>
+        <a href="index.html" class="w-full md:w-1/2 bg-indigo-600 text-white font-semibold py-4 rounded-lg hover:bg-indigo-700 transition-colors duration-300 flex items-center justify-center">Go to Checkout Page</a>
+      </div>
+    </div>
+
+    <div id="dashboard-container" class="hidden bg-white p-8 rounded-lg shadow-xl">
+      <h1 class="text-3xl font-bold mb-6 text-center text-gray-800">Store Dashboard</h1>
+      <div class="flex justify-between items-center mb-6">
+        <button onclick="window.location.href='checkout_login.html'" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700">🏠 Home</button>
+      </div>
+      <p class="text-center text-gray-600 mb-4">You are logged in with Store ID: <span id="storeId-span" class="font-bold text-gray-800"></span></p>
+
+      <div class="flex justify-center items-center gap-4 mb-8 bg-gray-100 p-2 rounded-full">
+        <button id="daily-tab" class="filter-tab active" data-filter="daily">Daily</button>
+        <button id="monthly-tab" class="filter-tab" data-filter="monthly">Monthly</button>
+        <button id="yearly-tab" class="filter-tab" data-filter="yearly">Yearly</button>
+      </div>
+
+      <div id="filter-inputs" class="flex flex-col sm:flex-row justify-center items-center gap-4 mb-8">
+        <div id="daily-filter" class="w-full sm:w-auto flex items-center gap-4">
+          <label for="dashboard-date-picker" class="text-gray-600">Date:</label>
+          <input type="date" id="dashboard-date-picker" class="p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-full" />
+        </div>
+        <div id="monthly-filter" class="w-full sm:w-auto flex items-center gap-4 hidden">
+          <label for="dashboard-month-picker" class="text-gray-600">Month:</label>
+          <input type="month" id="dashboard-month-picker" class="p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-full" />
+        </div>
+        <div id="yearly-filter" class="w-full sm:w-auto flex items-center gap-4 hidden">
+          <label for="dashboard-year-picker" class="text-gray-600">Year:</label>
+          <input type="number" id="dashboard-year-picker" placeholder="YYYY" class="p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-full" />
+        </div>
+        <button id="view-data-btn" class="bg-blue-600 text-white font-semibold px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-300">View</button>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="bg-gray-100 p-6 rounded-lg shadow-md col-span-1">
+          <h2 class="text-xl font-semibold text-gray-700"><span id="sales-title">Sales</span></h2>
+          <p id="sales-value" class="text-4xl font-bold mt-2 text-blue-600">₹0.00</p>
+        </div>
+        <div class="bg-gray-100 p-6 rounded-lg shadow-md col-span-1">
+          <h2 class="text-xl font-semibold text-gray-700">Average Basket Value</h2>
+          <p id="abv-value" class="text-4xl font-bold mt-2 text-green-600">₹0.00</p>
+        </div>
+        <div class="bg-gray-100 p-6 rounded-lg shadow-md col-span-1">
+          <h2 class="text-xl font-semibold text-gray-700">Average Basket Quantity</h2>
+          <p id="abq-value" class="text-4xl font-bold mt-2 text-purple-600">0.00</p>
+        </div>
+        <div class="bg-gray-100 p-6 rounded-lg shadow-md col-span-1">
+          <h2 class="text-xl font-semibold text-gray-700"><span id="rating-title">Rating</span></h2>
+          <p id="rating-value" class="rating-value">0.00</p>
+        </div>
+      </div>
+      
+      <div class="mt-8 flex justify-end">
+        <button id="view-chart-btn" class="bg-indigo-600 text-white font-semibold px-6 py-2 rounded-lg hover:bg-indigo-700 transition-colors duration-300">View Sales Chart</button>
+      </div>
+      
+    </div>
+
+    <div id="chart-page" class="page p-8 rounded-lg shadow-xl hidden flex-col">
+      <div class="flex justify-between items-center mb-6">
+        <button id="back-to-dashboard-btn" class="bg-gray-300 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-400">Back to Dashboard</button>
+      </div>
+      <div class="bg-white p-6 rounded-lg shadow-xl h-full">
+        <h2 class="text-2xl font-bold mb-4 text-center text-gray-800">Last 7 Days Data</h2>
+        
+        <div class="flex justify-center items-center gap-4 mb-8 bg-gray-100 p-2 rounded-full">
+          <button id="sales-chart-tab" class="chart-metric-tab active" data-metric="sales">Sales</button>
+          <button id="abv-chart-tab" class="chart-metric-tab" data-metric="abv">ABV</button>
+          <button id="abq-chart-tab" class="chart-metric-tab" data-metric="abq">ABQ</button>
+          <button id="rating-chart-tab" class="chart-metric-tab" data-metric="rating">Rating</button>
+        </div>
+
+        <canvas id="salesChart" class="w-full h-96"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div id="message-box" class="message-box">
+    <p id="message-text" class="text-center text-gray-700"></p>
+    <button id="message-ok-button" class="px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors duration-300">OK</button>
+  </div>
+  <div id="message-box-overlay" class="message-box-overlay"></div>
+
+  <div id="password-prompt" class="password-prompt">
+    <h2 class="text-xl font-semibold mb-4 text-center">Enter Employee Password</h2>
+    <p id="password-error-message" class="error-message"></p>
+    <input type="password" id="dashboard-password" placeholder="Password" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4" />
+    <div class="flex space-x-4">
+      <button id="password-submit-btn" class="flex-grow bg-blue-600 text-white font-semibold py-3 rounded-lg hover:bg-blue-700 transition-colors duration-300">Submit</button>
+      <button id="password-cancel-btn" class="flex-grow bg-gray-300 text-gray-800 font-semibold py-3 rounded-lg hover:bg-gray-400 transition-colors duration-300">Cancel</button>
+    </div>
+  </div>
+
+  <script>
+    const pages = {
+      login: document.getElementById('login-container'),
+      postLogin: document.getElementById('post-login-container'),
+      dashboard: document.getElementById('dashboard-container'),
+      chart: document.getElementById('chart-page')
+    };
+
+    function showMessage(message) {
+      document.getElementById('message-text').textContent = message;
+      document.getElementById('message-box').style.display = 'flex';
+      document.getElementById('message-box-overlay').style.display = 'block';
+    }
+    document.getElementById('message-ok-button').addEventListener('click', () => {
+      document.getElementById('message-box').style.display = 'none';
+      document.getElementById('message-box-overlay').style.display = 'none';
+    });
+
+    function showLoginPage() {
+      Object.values(pages).forEach(p => p.classList.add('hidden'));
+      pages.login.classList.remove('hidden');
+    }
+
+    function showPostLoginPage() {
+      Object.values(pages).forEach(p => p.classList.add('hidden'));
+      pages.postLogin.classList.remove('hidden');
+    }
+
+    let activeFilterType = 'daily';
+    let salesChart;
+
+    function showDashboard() {
+      Object.values(pages).forEach(p => p.classList.add('hidden'));
+      pages.dashboard.classList.remove('hidden');
+      const today = new Date().toISOString().split('T')[0];
+      document.getElementById('dashboard-date-picker').value = today;
+      setActiveFilter('daily');
+      fetchDashboardData('daily', today);
+    }
+
+    function showChartPage() {
+      Object.values(pages).forEach(p => p.classList.add('hidden'));
+      pages.chart.classList.remove('hidden');
+      fetchHistoricalData();
+    }
+
+    function showPasswordPrompt() {
+      document.getElementById('password-prompt').style.display = 'block';
+      document.getElementById('message-box-overlay').style.display = 'block';
+      document.getElementById('dashboard-password').focus();
+    }
+
+    function hidePasswordPrompt() {
+      document.getElementById('password-prompt').style.display = 'none';
+      document.getElementById('message-box-overlay').style.display = 'none';
+      document.getElementById('dashboard-password').value = '';
+      document.getElementById('password-error-message').textContent = '';
+    }
+
+    function setActiveFilter(filterType) {
+      document.querySelectorAll('.filter-tab').forEach(tab => {
+        tab.classList.remove('active');
+      });
+      document.getElementById(`${filterType}-tab`).classList.add('active');
+
+      document.getElementById('daily-filter').classList.add('hidden');
+      document.getElementById('monthly-filter').classList.add('hidden');
+      document.getElementById('yearly-filter').classList.add('hidden');
+      document.getElementById(`${filterType}-filter`).classList.remove('hidden');
+      
+      activeFilterType = filterType;
+    }
+
+    window.onload = () => {
+      const storedStoreId = sessionStorage.getItem('storeId');
+      if (storedStoreId) {
+        document.getElementById('storeId-span').textContent = storedStoreId;
+        showPostLoginPage();
+      } else {
+        showLoginPage();
+      }
+    };
+
+    const loginForm = document.getElementById('login-form');
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const storeId = document.getElementById('storeId').value.trim();
+      const password = document.getElementById('password').value.trim();
+
+      try {
+        const response = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ storeId, password })
+        });
+
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || data.error || 'Login failed.');
+
+        sessionStorage.setItem('storeId', storeId);
+        showMessage("Login successful!");
+        showPostLoginPage();
+      } catch (error) {
+        console.error("Login Error:", error);
+        showMessage(error.message);
+      }
+    });
+
+    const dashboardButton = document.getElementById('dashboard-button');
+    dashboardButton.addEventListener('click', () => {
+      showPasswordPrompt();
+    });
+
+    const passwordSubmitBtn = document.getElementById('password-submit-btn');
+    passwordSubmitBtn.addEventListener('click', async () => {
+      const storeId = sessionStorage.getItem('storeId');
+      const password = document.getElementById('dashboard-password').value.trim();
+
+      document.getElementById('password-error-message').textContent = '';
+
+      if (!storeId || !password) {
+        document.getElementById('password-error-message').textContent = "Please enter a password.";
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ storeId, password })
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+          document.getElementById('password-error-message').textContent = data.message || data.error || 'Login failed.';
+          return;
+        }
+
+        hidePasswordPrompt();
+        showDashboard();
+      } catch (error) {
+        console.error("Dashboard login error:", error);
+        document.getElementById('password-error-message').textContent = "Could not connect to the server.";
+      }
+    });
+
+    document.getElementById('password-cancel-btn').addEventListener('click', () => {
+      hidePasswordPrompt();
+    });
+
+    document.getElementById('dashboard-password').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        passwordSubmitBtn.click();
+      }
+    });
+
+    document.querySelectorAll('.filter-tab').forEach(tab => {
+      tab.addEventListener('click', (e) => {
+        setActiveFilter(e.target.dataset.filter);
+      });
+    });
+
+    document.getElementById('view-chart-btn').addEventListener('click', () => {
+      showChartPage();
+    });
+
+    document.getElementById('back-to-dashboard-btn').addEventListener('click', () => {
+      showDashboard();
+    });
+
+    document.getElementById('view-data-btn').addEventListener('click', () => {
+      let dateValue;
+      if (activeFilterType === 'daily') {
+        dateValue = document.getElementById('dashboard-date-picker').value;
+      } else if (activeFilterType === 'monthly') {
+        dateValue = document.getElementById('dashboard-month-picker').value;
+      } else if (activeFilterType === 'yearly') {
+        dateValue = document.getElementById('dashboard-year-picker').value + '-01-01';
+      }
+
+      if (dateValue) {
+        fetchDashboardData(activeFilterType, dateValue);
+      } else {
+        showMessage('Please select a valid date, month, or year.');
+      }
+    });
+
+    async function fetchDashboardData(filterType, selectedDate) {
+      const storeId = sessionStorage.getItem('storeId');
+      if (!storeId) {
+        showMessage("No active session. Please log in first.");
+        showLoginPage();
+        return;
+      }
+      
+      let dateLabel;
+      const dateObj = new Date(selectedDate);
+      
+      if (filterType === 'daily') {
+        dateLabel = dateObj.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+      } else if (filterType === 'monthly') {
+        dateLabel = dateObj.toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
+      } else if (filterType === 'yearly') {
+        dateLabel = dateObj.toLocaleDateString('en-US', { year: 'numeric' });
+      }
+
+      document.getElementById('sales-title').textContent = `Sales ${filterType === 'daily' ? 'on' : 'in'} ${dateLabel}`;
+      document.getElementById('rating-title').textContent = `Rating ${filterType === 'daily' ? 'on' : 'in'} ${dateLabel}`;
+
+      try {
+        const response = await fetch(`/api/dashboard/${storeId}?filterType=${filterType}&date=${selectedDate}`);
+        if (!response.ok) throw new Error('Failed to fetch dashboard data.');
+        const data = await response.json();
+        
+        document.getElementById('sales-value').textContent = `₹${data.sales}`;
+        document.getElementById('abv-value').textContent = `₹${data.abv}`;
+        document.getElementById('abq-value').textContent = data.abq;
+        document.getElementById('rating-value').textContent = data.rating;
+        
+        document.getElementById('storeId-span').textContent = storeId;
+        
+        // This element doesn't exist in the HTML, causing an error.
+        // document.getElementById('store-id-display').textContent = `Store ID: ${storeId}`;
+        // document.getElementById('last-updated').textContent = `Last updated: ${new Date(data.lastUpdated).toLocaleString()}`;
+        
+        const ratingEl = document.getElementById('rating-value');
+        const ratingVal = parseFloat(data.rating);
+
+        ratingEl.classList.remove('text-red-600', 'text-yellow-600', 'text-green-600');
+        if (ratingVal > 2.5) ratingEl.classList.add('text-green-600');
+        else if (ratingVal >= 1.5) ratingEl.classList.add('text-yellow-600');
+        else ratingEl.classList.add('text-red-600');
+      } catch (error) {
+        console.error("Dashboard Fetch Error:", error);
+        showMessage("Failed to load dashboard data. Please check if the backend server is running.");
+      }
+    }
+    
+    async function fetchHistoricalData() {
+      const storeId = sessionStorage.getItem('storeId');
+      if (!storeId) {
+        showMessage("No active session. Please log in first.");
+        return;
+      }
+      
+      try {
+        const response = await fetch(`/api/dashboard-history/${storeId}`);
+        if (!response.ok) throw new Error('Failed to fetch historical data.');
+        const data = await response.json();
+        
+        const dates = data.history.map(item => item.date);
+        
+        // Separate data for each metric
+        const datasets = {
+          sales: data.history.map(item => item.sales),
+          abv: data.history.map(item => item.abv),
+          abq: data.history.map(item => item.abq),
+          rating: data.history.map(item => item.rating),
+        };
+        
+        renderSalesChart(dates, datasets);
+      } catch (error) {
+        console.error("Historical Data Fetch Error:", error);
+        showMessage("Failed to load historical sales data.");
+      }
+    }
+    
+    // MODIFIED: renderSalesChart function to handle multiple datasets
+    function renderSalesChart(labels, datasets) {
+      const ctx = document.getElementById('salesChart').getContext('2d');
+      if (salesChart) {
+        salesChart.destroy();
+      }
+
+      salesChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: 'Sales',
+              data: datasets.sales,
+              borderColor: 'rgb(59, 130, 246)',
+              backgroundColor: 'rgba(59, 130, 246, 0.2)',
+              borderWidth: 2,
+              tension: 0.1,
+              pointBackgroundColor: 'rgb(59, 130, 246)',
+              pointBorderColor: '#fff',
+              pointHoverBackgroundColor: '#fff',
+              pointHoverBorderColor: 'rgb(59, 130, 246)',
+              hidden: false // Default to visible
+            },
+            {
+              label: 'ABV',
+              data: datasets.abv,
+              borderColor: 'rgb(16, 185, 129)',
+              backgroundColor: 'rgba(16, 185, 129, 0.2)',
+              borderWidth: 2,
+              tension: 0.1,
+              pointBackgroundColor: 'rgb(16, 185, 129)',
+              pointBorderColor: '#fff',
+              pointHoverBackgroundColor: '#fff',
+              pointHoverBorderColor: 'rgb(16, 185, 129)',
+              hidden: true // Initially hidden
+            },
+            {
+              label: 'ABQ',
+              data: datasets.abq,
+              borderColor: 'rgb(168, 85, 247)',
+              backgroundColor: 'rgba(168, 85, 247, 0.2)',
+              borderWidth: 2,
+              tension: 0.1,
+              pointBackgroundColor: 'rgb(168, 85, 247)',
+              pointBorderColor: '#fff',
+              pointHoverBackgroundColor: '#fff',
+              pointHoverBorderColor: 'rgb(168, 85, 247)',
+              hidden: true // Initially hidden
+            },
+            {
+              label: 'Rating',
+              data: datasets.rating,
+              borderColor: 'rgb(249, 115, 22)',
+              backgroundColor: 'rgba(249, 115, 22, 0.2)',
+              borderWidth: 2,
+              tension: 0.1,
+              pointBackgroundColor: 'rgb(249, 115, 22)',
+              pointBorderColor: '#fff',
+              pointHoverBackgroundColor: '#fff',
+              pointHoverBorderColor: 'rgb(249, 115, 22)',
+              hidden: true // Initially hidden
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: false // Hide the default legend
+            },
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              title: {
+                display: true,
+                text: 'Value'
+              }
+            }
+          }
+        }
+      });
+    }
+    
+    // Function to update chart visibility based on selected metric
+    function updateChartData(metric) {
+      if (!salesChart) return;
+      
+      salesChart.data.datasets.forEach(dataset => {
+        dataset.hidden = (dataset.label.toLowerCase() !== metric.toLowerCase());
+      });
+      salesChart.update();
+      
+      // Update active button style
+      document.querySelectorAll('.chart-metric-tab').forEach(tab => {
+        tab.classList.remove('active');
+      });
+      document.getElementById(`${metric.toLowerCase()}-chart-tab`).classList.add('active');
+    }
+
+    // Event listeners for chart metric buttons
+    document.getElementById('sales-chart-tab').addEventListener('click', () => updateChartData('Sales'));
+    document.getElementById('abv-chart-tab').addEventListener('click', () => updateChartData('ABV'));
+    document.getElementById('abq-chart-tab').addEventListener('click', () => updateChartData('ABQ'));
+    document.getElementById('rating-chart-tab').addEventListener('click', () => updateChartData('Rating'));
+  </script>
+</body>
+</html>
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Retail Self-Checkout</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@700&display=swap" />
+  <script src="https://js.stripe.com/v3/"></script>
+  <style>
+    body { font-family: 'Inter', sans-serif; background-color: #e2e8f0; }
+    .page { display: none; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px);} to { opacity: 1; transform: translateY(0);} }
+    .animate-fade-in { animation: fadeIn 0.6s ease forwards; }
+    .animate-fade-in-delay { animation: fadeIn 0.8s 0.15s ease forwards; opacity: 0; }
+    .custom-alert {
+      position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      background: #fff; border-radius: 1.5rem; box-shadow: 0 20px 25px -5px rgba(0,0,0,.1), 0 10px 10px -5px rgba(0,0,0,.04);
+      padding: 2rem; text-align: center; z-index: 1000; display: none; border: 2px solid #3b82f6;
+    }
+    .custom-alert-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 999; display: none; }
+    .smiley-button { font-size: 5rem; cursor: pointer; transition: transform 0.2s; }
+    .smiley-button:hover { transform: scale(1.1); }
+  </style>
+</head>
+<body class="bg-gray-200 flex items-center justify-center min-h-screen">
+  <div id="app-container" class="bg-white rounded-3xl shadow-2xl overflow-hidden w-full max-w-6xl mx-4 my-8 md:my-12 transition-all duration-300">
+
+    <!-- Welcome -->
+    <div id="welcome-page" class="page p-8 md:p-16 text-center flex flex-col items-center justify-center h-[700px] bg-gradient-to-br from-blue-50 to-indigo-100">
+      <img src="logo.png" height="100" width="100" alt="Store Logo" class="mx-auto mb-8 rounded-full shadow-lg cursor-pointer transition-transform transform hover:scale-105" ondblclick="window.location.href = 'checkout_login.html';" />
+      <h1 class="text-5xl md:text-6xl font-bold text-gray-800 mb-4 font-['Montserrat'] animate-fade-in">Welcome to Swift Checkout!</h1>
+      <p class="text-xl md:text-2xl text-gray-600 mb-10 animate-fade-in-delay">Please enter your phone number to get started.</p>
+      <div class="w-full max-w-sm flex flex-col items-center">
+        <input type="tel" id="phone-number-input" placeholder="e.g., 555-123-4567" class="w-full px-5 py-3 mb-6 border-2 border-gray-300 rounded-full focus:outline-none focus:ring-4 focus:ring-blue-200 transition-all duration-200 text-center text-lg" />
+        <button id="start-btn" class="bg-blue-600 text-white font-semibold py-4 px-12 rounded-full text-lg shadow-lg hover:bg-blue-700 transition-all duration-300 transform hover:scale-105 hover:shadow-xl">Continue</button>
+      </div>
+    </div>
+
+    <!-- Checkout -->
+    <div id="checkout-page" class="page p-6 md:p-10 flex flex-col lg:flex-row h-full lg:h-[700px]">
+      <div class="flex-grow flex flex-col p-4 lg:p-6">
+        <div class="flex justify-between items-center mb-6">
+          <button id="back-to-home-btn-2" class="text-gray-500 hover:text-gray-800 transition-colors duration-200" title="Back to Home">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-10v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
+          </button>
+          <h2 class="text-4xl font-bold text-gray-800 font-['Montserrat'] text-center flex-grow">Scan your items</h2>
+          <div class="w-8 h-8"></div>
+        </div>
+
+        <div class="w-full max-w-md mx-auto flex items-center space-x-4 mb-8">
+          <input type="text" id="item-code-input" placeholder="Enter item code (e.g., 101)" class="flex-grow px-5 py-3 border-2 border-gray-300 rounded-full focus:outline-none focus:ring-4 focus:ring-blue-200 transition-all duration-200" />
+          <button id="add-by-code-btn" class="bg-blue-500 text-white py-3 px-8 rounded-full font-semibold shadow-md hover:bg-blue-600 transition-colors duration-300">Add</button>
+        </div>
+
+        <div class="overflow-y-auto pt-4">
+          <h3 class="text-2xl font-bold text-gray-800 mb-4 font-['Montserrat']">Popular Items</h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+           <div class="product-item bg-gray-50 p-4 rounded-xl shadow-lg flex flex-col items-center text-center transition-transform hover:scale-105 hover:shadow-xl duration-300 cursor-pointer" data-itemcode="9999" data-name="Paper Bag" data-price="10">
+  <img src="bag.jpg" class="w-32 h-32 rounded-lg mb-2 object-cover" />
+  <h3 class="font-bold text-lg text-gray-900">Paper Bag</h3>
+  <p class="text-gray-600 text-sm">₹10</p>
+  <button class="add-btn mt-2 bg-green-500 text-white py-1 px-4 rounded-full font-medium shadow-sm hover:bg-green-600 transition-colors duration-200 text-sm">Add</button>
+</div>
+
+<div class="product-item bg-gray-50 p-4 rounded-xl shadow-lg flex flex-col items-center text-center transition-transform hover:scale-105 hover:shadow-xl duration-300 cursor-pointer" data-itemcode="8888" data-name="Cotton Bag" data-price="30">
+  <img src="cotton.jpg" class="w-32 h-32 rounded-lg mb-2 object-cover" />
+  <h3 class="font-bold text-lg text-gray-900">Cotton Bag</h3>
+  <p class="text-gray-600 text-sm">₹30</p>
+  <button class="add-btn mt-2 bg-green-500 text-white py-1 px-4 rounded-full font-medium shadow-sm hover:bg-green-600 transition-colors duration-200 text-sm">Add</button>
+</div>
+           
+           
+           
+           
+            <div class="product-item bg-gray-50 p-4 rounded-xl shadow-lg flex flex-col items-center text-center transition-transform hover:scale-105 hover:shadow-xl duration-300 cursor-pointer" data-itemcode="1001" data-name="Yellow Cotton Tee" data-price="499">
+  <img src="7.jpg" class="w-32 h-32 rounded-lg mb-2 object-cover" />
+  <h3 class="font-bold text-lg text-gray-900">Yellow Cotton Tee</h3>
+  <p class="text-gray-600 text-sm">₹499</p>
+  <button class="add-btn mt-2 bg-green-500 text-white py-1 px-4 rounded-full font-medium shadow-sm hover:bg-green-600 transition-colors duration-200 text-sm">Add</button>
+</div>
+<div class="product-item bg-gray-50 p-4 rounded-xl shadow-lg flex flex-col items-center text-center transition-transform hover:scale-105 hover:shadow-xl duration-300 cursor-pointer" data-itemcode="1002" data-name="Dragon Embroided Tshirt" data-price="799">
+  <img src="3.jpg" class="w-32 h-32 rounded-lg mb-2 object-cover" />
+  <h3 class="font-bold text-lg text-gray-900">Dragon Embroided Tshirt</h3>
+  <p class="text-gray-600 text-sm">₹799</p>
+  <button class="add-btn mt-2 bg-green-500 text-white py-1 px-4 rounded-full font-medium shadow-sm hover:bg-green-600 transition-colors duration-200 text-sm">Add</button>
+</div>
+<div class="product-item bg-gray-50 p-4 rounded-xl shadow-lg flex flex-col items-center text-center transition-transform hover:scale-105 hover:shadow-xl duration-300 cursor-pointer" data-itemcode="1003" data-name="Green Oversized Tee" data-price="699">
+  <img src="4.jpg" class="w-32 h-32 rounded-lg mb-2 object-cover" />
+  <h3 class="font-bold text-lg text-gray-900">Green Oversized Tee</h3>
+  <p class="text-gray-600 text-sm">₹699</p>
+  <button class="add-btn mt-2 bg-green-500 text-white py-1 px-4 rounded-full font-medium shadow-sm hover:bg-green-600 transition-colors duration-200 text-sm">Add</button>
+</div>
+<div class="product-item bg-gray-50 p-4 rounded-xl shadow-lg flex flex-col items-center text-center transition-transform hover:scale-105 hover:shadow-xl duration-300 cursor-pointer" data-itemcode="1004" data-name="Olive Reg Tee" data-price="499">
+  <img src="5.jpg" class="w-32 h-32 rounded-lg mb-2 object-cover" />
+  <h3 class="font-bold text-lg text-gray-900">Olive Reg Tee</h3>
+  <p class="text-gray-600 text-sm">₹499</p>
+  <button class="add-btn mt-2 bg-green-500 text-white py-1 px-4 rounded-full font-medium shadow-sm hover:bg-green-600 transition-colors duration-200 text-sm">Add</button>
+</div>
+<div class="product-item bg-gray-50 p-4 rounded-xl shadow-lg flex flex-col items-center text-center transition-transform hover:scale-105 hover:shadow-xl duration-300 cursor-pointer" data-itemcode="1005" data-name="Air Jordan Blue High" data-price="17999">
+  <img src="8.jpg" class="w-32 h-32 rounded-lg mb-2 object-cover" />
+  <h3 class="font-bold text-lg text-gray-900">Air Jordan Blue High</h3>
+  <p class="text-gray-600 text-sm">₹17999</p>
+  <button class="add-btn mt-2 bg-green-500 text-white py-1 px-4 rounded-full font-medium shadow-sm hover:bg-green-600 transition-colors duration-200 text-sm">Add</button>
+</div>
+<div class="product-item bg-gray-50 p-4 rounded-xl shadow-lg flex flex-col items-center text-center transition-transform hover:scale-105 hover:shadow-xl duration-300 cursor-pointer" data-itemcode="1006" data-name="AIR Jordan Yeezy" data-price="9999">
+  <img src="1.jpg" class="w-32 h-32 rounded-lg mb-2 object-cover" />
+  <h3 class="font-bold text-lg text-gray-900">AIR Jordan Yeezy</h3>
+  <p class="text-gray-600 text-sm">₹9999</p>
+  <button class="add-btn mt-2 bg-green-500 text-white py-1 px-4 rounded-full font-medium shadow-sm hover:bg-green-600 transition-colors duration-200 text-sm">Add</button>
+</div>
+<div class="product-item bg-gray-50 p-4 rounded-xl shadow-lg flex flex-col items-center text-center transition-transform hover:scale-105 hover:shadow-xl duration-300 cursor-pointer" data-itemcode="1007" data-name="AIR Jordan Red High" data-price="11999">
+  <img src="2.jpg" class="w-32 h-32 rounded-lg mb-2 object-cover" />
+  <h3 class="font-bold text-lg text-gray-900">AIR Jordan Red High</h3>
+  <p class="text-gray-600 text-sm">₹11999</p>
+  <button class="add-btn mt-2 bg-green-500 text-white py-1 px-4 rounded-full font-medium shadow-sm hover:bg-green-600 transition-colors duration-200 text-sm">Add</button>
+</div>
+<div class="product-item bg-gray-50 p-4 rounded-xl shadow-lg flex flex-col items-center text-center transition-transform hover:scale-105 hover:shadow-xl duration-300 cursor-pointer" data-itemcode="1008" data-name="AIR Jordan White High" data-price="13999">
+  <img src="6.jpg" class="w-32 h-32 rounded-lg mb-2 object-cover" />
+  <h3 class="font-bold text-lg text-gray-900">AIR Jordan White High</h3>
+  <p class="text-gray-600 text-sm">₹13999</p>
+  <button class="add-btn mt-2 bg-green-500 text-white py-1 px-4 rounded-full font-medium shadow-sm hover:bg-green-600 transition-colors duration-200 text-sm">Add</button>
+</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cart -->
+      <div class="bg-blue-50 p-6 rounded-3xl border border-blue-200 shadow-inner w-full lg:w-1/3 mt-8 lg:mt-0 lg:ml-8 flex flex-col justify-between">
+        <div>
+          <h3 class="text-2xl font-bold text-gray-800 mb-6">Cart Summary</h3>
+          <div id="cart-items" class="space-y-4 mb-6 overflow-y-auto max-h-96">
+            <p id="empty-cart-message" class="text-center text-gray-500 italic">Your cart is empty.</p>
+          </div>
+        </div>
+        <div class="mt-auto">
+          <div class="flex justify-between items-center text-2xl font-semibold text-gray-900 border-t-2 border-gray-300 pt-6">
+            <span>Total:</span>
+            <span id="cart-total">₹0.00</span>
+          </div>
+          <button id="go-to-payment-btn" class="w-full bg-blue-600 text-white font-semibold py-4 mt-8 rounded-full text-lg shadow-lg hover:bg-blue-700 transition-colors duration-300">Proceed to Payment</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Payment -->
+    <div id="payment-page" class="page p-6 md:p-10 text-center flex flex-col items-center justify-center min-h-[700px]">
+      <h2 class="text-4xl font-bold text-gray-800 mb-6 font-['Montserrat']">Confirm Payment</h2>
+      <div class="bg-white p-8 rounded-2xl shadow-lg w-full max-w-md">
+        <p class="text-xl text-gray-700 mb-2">Your total is:</p>
+        <p id="payment-total" class="text-5xl font-bold text-blue-600 mb-4">₹0.00</p>
+        <div id="payment-element" class="mb-6"></div>
+        <p class="text-gray-500 mb-6 text-sm">Use Stripe test card 4242 4242 4242 4242 with any future date & any CVC.</p>
+        <div class="space-y-3">
+          <button id="pay-btn" class="w-full bg-green-500 text-white font-semibold py-3 rounded-full text-lg shadow-lg hover:bg-green-600 transition-colors duration-300">Pay Now</button>
+          <button id="back-to-cart-btn" class="w-full bg-gray-200 text-gray-800 font-semibold py-3 rounded-full text-lg hover:bg-gray-300 transition-colors duration-300">Back to Cart</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Rating Page (NEW) -->
+    <div id="rating-page" class="page p-6 md:p-10 text-center flex flex-col items-center justify-center min-h-[700px]">
+      <h2 class="text-4xl font-bold text-gray-800 mb-8">How was your experience?</h2>
+      <p class="text-xl text-gray-600 mb-12">Please rate your experience with this store.</p>
+      <div class="flex space-x-12">
+        <button class="flex flex-col items-center justify-center p-4 rounded-xl shadow-lg transition-transform hover:scale-105 duration-300 bg-green-100 border border-green-300 text-green-700" data-rating="3">
+          <span class="smiley-button text-green-500 text-4xl">😊</span>
+          <span class="mt-2 text-sm font-semibold">Very Satisfied</span>
+        </button>
+
+        <button class="flex flex-col items-center justify-center p-4 rounded-xl shadow-lg transition-transform hover:scale-105 duration-300 bg-yellow-100 border border-yellow-300 text-yellow-700" data-rating="2">
+          <span class="smiley-button text-yellow-500 text-4xl">😐</span>
+          <span class="mt-2 text-sm font-semibold">Neutral</span>
+        </button>
+
+        <button class="flex flex-col items-center justify-center p-4 rounded-xl shadow-lg transition-transform hover:scale-105 duration-300 bg-red-100 border border-red-300 text-red-700" data-rating="1">
+          <span class="smiley-button text-red-500 text-4xl">😡</span>
+          <span class="mt-2 text-sm font-semibold">Not Satisfied</span>
+        </button>
+      </div>
+      <button id="skip-rating-btn" class="mt-12 text-gray-500 hover:text-gray-800 underline">Skip</button>
+    </div>
+
+    <!-- Receipt -->
+    <div id="receipt-page" class="page p-6 md:p-10 text-center flex flex-col items-center justify-center h-[700px]">
+      <h2 class="text-4xl font-bold text-green-600 mb-4 font-['Montserrat']">Payment Successful! 🎉</h2>
+      <p class="text-xl text-gray-700 mb-8">Thank you for your purchase.</p>
+      <div class="bg-gray-50 p-8 rounded-2xl border-2 border-gray-200 shadow-inner max-w-sm mx-auto w-full">
+        <h3 class="text-2xl font-semibold mb-6">Your Receipt</h3>
+        <div id="receipt-items" class="text-left space-y-3 mb-6 text-gray-700"></div>
+        <div class="flex justify-between items-center text-2xl font-bold border-t-2 border-gray-300 pt-6">
+          <span>Total Paid:</span>
+          <span id="receipt-total" class="text-blue-600">₹0.00</span>
+        </div>
+      </div>
+      <button id="go-home-btn" class="bg-blue-600 text-white font-semibold py-4 px-10 mt-12 rounded-full text-lg shadow-lg hover:bg-blue-700 transition-colors duration-300 transform hover:scale-105">Start a New Checkout</button>
+    </div>
+  </div>
+
+  <!-- Alert modal -->
+  <div id="custom-alert" class="custom-alert">
+    <p id="alert-message" class="text-lg text-gray-800 mb-4"></p>
+    <button id="alert-ok-btn" class="bg-blue-600 text-white font-semibold py-2 px-6 rounded-full hover:bg-blue-700 transition-colors">OK</button>
+  </div>
+  <div id="custom-alert-overlay" class="custom-alert-overlay"></div>
+
+  <script>
+    const products = {
+      '101': { name: 'Apple', price: 150 },
+      '102': { name: 'Banana', price: 40 },
+      '103': { name: 'Orange', price: 99 },
+      '104': { name: 'Water Bottle', price: 20 },
+      '105': { name: 'Bourbon', price: 10 },
+      '106': { name: 'Tissue', price: 75 },
+      '107': { name: 'Socks', price: 199 },
+      '108': { name: 'Headphone', price: 999 }
+    };
+
+    const pages = {
+      welcome: document.getElementById('welcome-page'),
+      checkout: document.getElementById('checkout-page'),
+      payment: document.getElementById('payment-page'),
+      rating: document.getElementById('rating-page'),
+      receipt: document.getElementById('receipt-page'),
+    };
+
+    const stripe = Stripe('pk_test_51S2SMcGqRQEokyaTRDkrk8WdjQl4YplnlBZdpuNcxYuCmLX6dn9UrQmYCyxcOQ0Qbx2OukXsMD3PDUwYIPtVGvvF00MYbr3hsm');
+    let elements;
+    let clientSecret;
+
+    // DOM elements
+    const startBtn = document.getElementById('start-btn');
+    const phoneNumberInput = document.getElementById('phone-number-input');
+    const itemCodeInput = document.getElementById('item-code-input');
+    const addByCodeBtn = document.getElementById('add-by-code-btn');
+    const cartItemsContainer = document.getElementById('cart-items');
+    const emptyCartMessage = document.getElementById('empty-cart-message');
+    const cartTotalSpan = document.getElementById('cart-total');
+    const goToPaymentBtn = document.getElementById('go-to-payment-btn');
+    const paymentTotalSpan = document.getElementById('payment-total');
+    const payBtn = document.getElementById('pay-btn');
+    const backToCartBtn = document.getElementById('back-to-cart-btn');
+    const receiptItemsContainer = document.getElementById('receipt-items');
+    const receiptTotalSpan = document.getElementById('receipt-total');
+    const goHomeBtn = document.getElementById('go-home-btn');
+    const backToHomeBtn2 = document.getElementById('back-to-home-btn-2');
+    const customAlert = document.getElementById('custom-alert');
+    const customAlertOverlay = document.getElementById('custom-alert-overlay');
+    const alertMessage = document.getElementById('alert-message');
+    const alertOkBtn = document.getElementById('alert-ok-btn');
+    const smileyButtons = document.querySelectorAll('.smiley-button');
+    const skipRatingBtn = document.getElementById('skip-rating-btn');
+
+    let cart = [];
+    let total = 0;
+    let userPhoneNumber = '';
+    let userName = 'Guest';
+    let storeId = '';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      storeId = sessionStorage.getItem('storeId');
+      if (!storeId) {
+        showAlert('No active employee session found. Please log in.');
+        setTimeout(() => { window.location.href = 'checkout_login.html'; }, 1200);
+        return;
+      }
+      showPage('welcome-page');
+      updateCartDisplay();
+    });
+
+    function showAlert(message) {
+      alertMessage.textContent = message;
+      customAlert.style.display = 'block';
+      customAlertOverlay.style.display = 'block';
+    }
+    alertOkBtn.addEventListener('click', () => {
+      customAlert.style.display = 'none';
+      customAlertOverlay.style.display = 'none';
+    });
+
+    function showPage(pageId) {
+      Object.values(pages).forEach(p => p.style.display = 'none');
+      const el = document.getElementById(pageId);
+      if (el) el.style.display = 'flex';
+    }
+
+    function showPostLoginPage() {
+      window.location.href = 'checkout_login.html';
+    }
+
+    function addItemToCart(itemName, itemPrice) {
+      const existingItem = cart.find(i => i.name === itemName);
+      if (existingItem) existingItem.quantity++;
+      else cart.push({ name: itemName, price: itemPrice, quantity: 1 });
+      updateCartDisplay();
+    }
+
+    function updateCartDisplay() {
+      cartItemsContainer.innerHTML = '';
+      total = 0;
+      if (cart.length === 0) {
+        emptyCartMessage.style.display = 'block';
+        goToPaymentBtn.disabled = true;
+        goToPaymentBtn.classList.add('opacity-50', 'cursor-not-allowed');
+      } else {
+        emptyCartMessage.style.display = 'none';
+        goToPaymentBtn.disabled = false;
+        goToPaymentBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        cart.forEach(item => {
+          const itemDiv = document.createElement('div');
+          itemDiv.className = 'flex justify-between items-center text-gray-800';
+          itemDiv.innerHTML = `<span class="font-medium">${item.name} x ${item.quantity}</span><span>₹${(item.price * item.quantity).toFixed(2)}</span>`;
+          cartItemsContainer.appendChild(itemDiv);
+          total += item.price * item.quantity;
+        });
+      }
+      cartTotalSpan.textContent = `₹${total.toFixed(2)}`;
+    }
+
+    function updateReceiptDisplay() {
+      receiptItemsContainer.innerHTML = '';
+      cart.forEach(item => {
+        const itemDiv = document.createElement('div');
+        itemDiv.className = 'flex justify-between';
+        itemDiv.innerHTML = `<span>${item.name} x ${item.quantity}</span><span>₹${(item.price * item.quantity).toFixed(2)}</span>`;
+        receiptItemsContainer.appendChild(itemDiv);
+      });
+      receiptTotalSpan.textContent = `₹${total.toFixed(2)}`;
+    }
+
+    // --- Event Listeners ---
+    startBtn.addEventListener('click', async () => {
+      userPhoneNumber = phoneNumberInput.value.trim();
+      if (!userPhoneNumber) { showAlert('Please enter your phone number.'); return; }
+      try {
+        const response = await fetch('/api/check-phone', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phoneNumber: userPhoneNumber })
+        });
+        const data = await response.json();
+        if (data.exists) {
+          userName = data.name || 'Guest';
+          showAlert(`Welcome back, ${userName}!`);
+        } else {
+          const newName = prompt("Welcome! We don't have your name on file. Please enter your name:");
+          if (newName) { userName = newName; showAlert(`Thank you, ${userName}! Let's start shopping.`); }
+          else { userName = 'Guest'; userPhoneNumber = ''; showAlert('Proceeding as guest.'); }
+        }
+        showPage('checkout-page');
+        updateCartDisplay();
+      } catch (err) {
+        console.error('Failed to check phone number:', err);
+        showAlert('Could not connect to the server. Please try again later.');
+      }
+    });
+
+    document.querySelectorAll('.add-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const productEl = e.target.closest('.product-item');
+        addItemToCart(productEl.dataset.name, parseFloat(productEl.dataset.price));
+      });
+    });
+
+    addByCodeBtn.addEventListener('click', () => {
+      const itemCode = itemCodeInput.value.trim();
+      const product = products[itemCode];
+      if (product) { addItemToCart(product.name, product.price); itemCodeInput.value = ''; }
+      else { showAlert('Invalid item code. Please try again.'); }
+    });
+    itemCodeInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') addByCodeBtn.click(); });
+
+    goToPaymentBtn.addEventListener('click', async () => {
+      if (cart.length === 0) { showAlert('Your cart is empty.'); return; }
+      paymentTotalSpan.textContent = `₹${total.toFixed(2)}`;
+
+      try {
+        const amount = Math.round(total * 100); // paise
+        const resp = await fetch('/api/create-payment-intent', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ amount, currency: 'inr' })
+        });
+        if (!resp.ok) throw new Error('Failed to create payment intent');
+        const data = await resp.json();
+        clientSecret = data.clientSecret;
+
+        if (elements) elements = null;
+        const appearance = { theme: 'stripe' };
+        elements = stripe.elements({ clientSecret, appearance });
+        const paymentElement = elements.create('payment');
+        paymentElement.mount('#payment-element');
+
+        showPage('payment-page');
+      } catch (err) {
+        console.error('PI error:', err);
+        showAlert('Could not initialize payment. Please try again.');
+      }
+    });
+
+    payBtn.addEventListener('click', async () => {
+      if (!clientSecret || !elements) { showAlert('Payment not initialized.'); return; }
+
+      try {
+        const { error, paymentIntent } = await stripe.confirmPayment({
+          elements,
+          redirect: 'if_required',
+        });
+
+        if (error) {
+          console.error('Stripe error:', error);
+          showAlert(`Payment failed: ${error.message}`);
+          return;
+        }
+
+        if (paymentIntent && paymentIntent.status === 'succeeded') {
+          const checkoutData = {
+            phoneNumber: userPhoneNumber,
+            name: userName,
+            receiptItems: cart,
+            total: Number(total.toFixed(2)),
+            storeId: Number(storeId)
+          };
+
+          const saveResponse = await fetch('/api/save-checkout', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(checkoutData)
+          });
+
+          if (!saveResponse.ok) {
+            const errData = await saveResponse.json();
+            showAlert(`Payment captured, but receipt failed: ${errData.error || 'Unknown error'}`);
+          }
+          
+          showPage('rating-page'); // Redirect to rating page instead of receipt
+        } else {
+          showAlert('Payment not completed.');
+        }
+      } catch (err) {
+        console.error('Payment process error:', err);
+        showAlert(`Payment failed: ${err.message}`);
+      }
+    });
+    
+    // NEW RATING LOGIC
+    async function submitRating(ratingValue) {
+      if (!storeId) {
+        showAlert('Cannot save rating. Store ID not found.');
+        showPage('receipt-page');
+        return;
+      }
+      try {
+        const response = await fetch('/api/submit-rating', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ storeId: Number(storeId), ratingValue })
+        });
+        if (!response.ok) {
+          const errData = await response.json();
+          console.error('Failed to save rating:', errData.error);
+        }
+      } catch (err) {
+        console.error('Error submitting rating:', err);
+      }
+      updateReceiptDisplay();
+      showPage('receipt-page');
+    }
+    
+    smileyButtons.forEach(button => {
+      button.addEventListener('click', (e) => {
+        const rating = parseInt(e.target.dataset.rating);
+        submitRating(rating);
+      });
+    });
+    
+    skipRatingBtn.addEventListener('click', () => {
+      updateReceiptDisplay();
+      showPage('receipt-page');
+    });
+
+    backToCartBtn.addEventListener('click', () => showPage('checkout-page'));
+
+    function goToHome() {
+      cart = []; total = 0; userPhoneNumber = ''; userName = 'Guest';
+      updateCartDisplay(); phoneNumberInput.value = '';
+      showPage('welcome-page');
+    }
+    goHomeBtn.addEventListener('click', goToHome);
+    backToHomeBtn2.addEventListener('click', goToHome);
+  </script>
+</body>
+</html>
+
+
+
+// app.js — Backend with /api routes + Stripe + MSSQL
+const express = require('express');
+const sql = require('mssql');
+const cors = require('cors');
+const path = require('path');
+const stripe = require('stripe')('sk_test_51S2SMcGqRQEokyaTISnPn6K6JbRBpVEaKHcdr60H1XMzBS6qn3zaBjGCK85NIauOPU0KvSq3lid7fiTHtGbrGkVf00S8iY80Kj'); // TODO: move to env in prod
+
+const app = express();
+const port = 3000;
+
+// Middleware
+app.use(cors());
+app.use(express.json());
+app.use(express.static(path.join(__dirname, 'public')));
+
+// --- Database Configuration ---
+const config = {
+  user: 'myuser',
+  password: 'StrongPassword123',
+  server: 'localhost\\SQLEXPRESS',
+  database: 'Your_Retail_DB',
+  options: { encrypt: false, trustServerCertificate: true },
+};
+
+// --- Database Connection ---
+let pool;
+async function connectToDatabase() {
+  try {
+    if (!pool) {
+      pool = await sql.connect(config);
+      console.log('✅ Connected to SQL Server successfully!');
+    }
+  } catch (err) {
+    console.error('❌ Database connection failed:', err);
+  }
+}
+connectToDatabase();
+
+// =========================
+// API ENDPOINTS (/api prefix)
+// =========================
+
+// 0) Health check
+app.get('/api/health', (_req, res) => res.json({ ok: true }));
+
+// 1) Employee Login
+app.post('/api/login', async (req, res) => {
+  const { storeId, password } = req.body;
+  if (!pool) return res.status(500).json({ error: 'Database not connected.' });
+
+  try {
+    const result = await pool
+      .request()
+      .input('storeId', sql.Int, storeId)
+      .query('SELECT EmployeePIN FROM Stores WHERE StoreId = @storeId');
+
+    if (result.recordset.length > 0) {
+      const storedPin = result.recordset[0].EmployeePIN;
+      if (password === storedPin) {
+        res.status(200).json({ success: true, message: 'Login successful.' });
+      } else {
+        res.status(401).json({ success: false, message: 'Invalid credentials.' });
+      }
+    } else {
+      res.status(401).json({ success: false, message: 'Store ID not found.' });
+    }
+  } catch (err) {
+    console.error('Error during login:', err);
+    res.status(500).json({ error: 'Internal server error.' });
+  }
+});
+
+// 1.5) Check phone
+app.post('/api/check-phone', async (req, res) => {
+  const { phoneNumber } = req.body;
+  if (!pool) return res.status(500).json({ error: 'Database not connected.' });
+  try {
+    const result = await pool
+      .request()
+      .input('phoneNumber', sql.NVarChar, phoneNumber)
+      .query('SELECT TOP 1 Name FROM Users WHERE PhoneNumber = @phoneNumber');
+
+    if (result.recordset.length) {
+      return res.json({ exists: true, name: result.recordset[0].Name });
+    }
+    return res.json({ exists: false });
+  } catch (err) {
+    console.error('Error during check-phone:', err);
+    res.status(500).json({ error: 'Internal server error.' });
+  }
+});
+
+// 2) Dashboard Data
+app.get('/api/dashboard/:storeId', async (req, res) => {
+  const { storeId } = req.params;
+  const { filterType, date } = req.query;
+
+  if (!pool) return res.status(500).json({ error: 'Database not connected.' });
+
+  try {
+    let sales = 0, abv = 0, abq = 0, rating = 0;
+    
+    let salesResult, itemsResult, ratingsResult;
+    
+    switch (filterType) {
+      case 'daily':
+        const selectedDateDaily = new Date(date);
+        salesResult = await pool.request().input('storeId', sql.Int, storeId).input('selectedDate', sql.Date, selectedDateDaily).query(`
+          SELECT SUM(TotalAmount) AS Sales, AVG(TotalAmount) AS ABV FROM Receipts WHERE StoreId = @storeId AND CAST(PurchaseDate AS DATE) = @selectedDate;
+        `);
+        itemsResult = await pool.request().input('storeId', sql.Int, storeId).input('selectedDate', sql.Date, selectedDateDaily).query(`
+          SELECT SUM(T2.Quantity) AS TotalItems, COUNT(T1.ReceiptId) AS TotalReceipts FROM Receipts T1 JOIN ReceiptItems T2 ON T1.ReceiptId = T2.ReceiptId WHERE T1.StoreId = @storeId AND CAST(T1.PurchaseDate AS DATE) = @selectedDate;
+        `);
+        sales = salesResult.recordset[0].Sales;
+        abv = salesResult.recordset[0].ABV;
+        abq = itemsResult.recordset[0].TotalReceipts ? itemsResult.recordset[0].TotalItems / itemsResult.recordset[0].TotalReceipts : 0;
+        ratingsResult = await pool.request().input('storeId', sql.Int, storeId).input('selectedDate', sql.Date, selectedDateDaily).query(`
+          SELECT AVG(CAST(RatingValue AS FLOAT)) AS DailyRating FROM StoreRatings WHERE StoreId = @storeId AND CAST(RatingDate AS DATE) = @selectedDate;
+        `);
+        rating = ratingsResult.recordset[0].DailyRating;
+        break;
+
+      case 'monthly':
+        const selectedDateMonthly = new Date(date);
+        salesResult = await pool.request().input('storeId', sql.Int, storeId).input('selectedDate', sql.Date, selectedDateMonthly).query(`
+          SELECT SUM(TotalAmount) AS Sales, AVG(TotalAmount) AS ABV FROM Receipts WHERE StoreId = @storeId AND DATEPART(month, PurchaseDate) = DATEPART(month, @selectedDate) AND YEAR(PurchaseDate) = YEAR(@selectedDate);
+        `);
+        itemsResult = await pool.request().input('storeId', sql.Int, storeId).input('selectedDate', sql.Date, selectedDateMonthly).query(`
+          SELECT SUM(T2.Quantity) AS TotalItems, COUNT(T1.ReceiptId) AS TotalReceipts FROM Receipts T1 JOIN ReceiptItems T2 ON T1.ReceiptId = T2.ReceiptId WHERE T1.StoreId = @storeId AND DATEPART(month, T1.PurchaseDate) = DATEPART(month, @selectedDate) AND YEAR(T1.PurchaseDate) = YEAR(@selectedDate);
+        `);
+        sales = salesResult.recordset[0].Sales;
+        abv = salesResult.recordset[0].ABV;
+        abq = itemsResult.recordset[0].TotalReceipts ? itemsResult.recordset[0].TotalItems / itemsResult.recordset[0].TotalReceipts : 0;
+        ratingsResult = await pool.request().input('storeId', sql.Int, storeId).input('selectedDate', sql.Date, selectedDateMonthly).query(`
+          SELECT AVG(CAST(RatingValue AS FLOAT)) AS MonthlyRating FROM StoreRatings WHERE StoreId = @storeId AND DATEPART(month, RatingDate) = DATEPART(month, @selectedDate) AND YEAR(RatingDate) = YEAR(@selectedDate);
+        `);
+        rating = ratingsResult.recordset[0].MonthlyRating;
+        break;
+
+      case 'yearly':
+        const selectedDateYearly = new Date(date);
+        salesResult = await pool.request().input('storeId', sql.Int, storeId).input('selectedDate', sql.Date, selectedDateYearly).query(`
+          SELECT SUM(TotalAmount) AS Sales, AVG(TotalAmount) AS ABV FROM Receipts WHERE StoreId = @storeId AND YEAR(PurchaseDate) = YEAR(@selectedDate);
+        `);
+        itemsResult = await pool.request().input('storeId', sql.Int, storeId).input('selectedDate', sql.Date, selectedDateYearly).query(`
+          SELECT SUM(T2.Quantity) AS TotalItems, COUNT(T1.ReceiptId) AS TotalReceipts FROM Receipts T1 JOIN ReceiptItems T2 ON T1.ReceiptId = T2.ReceiptId WHERE T1.StoreId = @storeId AND YEAR(T1.PurchaseDate) = YEAR(@selectedDate);
+        `);
+        sales = salesResult.recordset[0].Sales;
+        abv = salesResult.recordset[0].ABV;
+        abq = itemsResult.recordset[0].TotalReceipts ? itemsResult.recordset[0].TotalItems / itemsResult.recordset[0].TotalReceipts : 0;
+        ratingsResult = await pool.request().input('storeId', sql.Int, storeId).input('selectedDate', sql.Date, selectedDateYearly).query(`
+          SELECT AVG(CAST(RatingValue AS FLOAT)) AS YearlyRating FROM StoreRatings WHERE StoreId = @storeId AND YEAR(RatingDate) = YEAR(@selectedDate);
+        `);
+        rating = ratingsResult.recordset[0].YearlyRating;
+        break;
+    }
+
+    const ytdRatingsResult = await pool.request().input('storeId', sql.Int, storeId).query(`
+      SELECT AVG(CAST(RatingValue AS FLOAT)) AS YTD_Rating FROM StoreRatings WHERE StoreId = @storeId AND YEAR(RatingDate) = YEAR(GETDATE());
+    `);
+    const ytdRating = ytdRatingsResult.recordset[0].YTD_Rating;
+
+    res.status(200).json({
+      sales: Number(sales || 0).toFixed(2),
+      abv: Number(abv || 0).toFixed(2),
+      abq: Number(abq || 0).toFixed(2),
+      rating: Number(rating || 0).toFixed(2),
+      ytdRating: Number(ytdRating || 0).toFixed(2),
+      lastUpdated: new Date().toISOString(),
+    });
+  } catch (err) {
+    console.error('Error fetching dashboard data:', err);
+    res.status(500).json({ error: 'Internal server error.' });
+  }
+});
+
+// NEW: API endpoint to fetch historical sales data for charting
+app.get('/api/dashboard-history/:storeId', async (req, res) => {
+  const { storeId } = req.params;
+  const today = new Date().toISOString().split('T')[0];
+
+  if (!pool) return res.status(500).json({ error: 'Database not connected.' });
+
+  try {
+    const historyResult = await pool.request()
+      .input('storeId', sql.Int, storeId)
+      .query(`
+        SELECT
+          CAST(PurchaseDate AS DATE) AS SalesDate,
+          SUM(TotalAmount) AS TotalSales,
+          AVG(TotalAmount) AS ABV,
+          COUNT(DISTINCT T1.ReceiptId) AS TotalReceipts,
+          SUM(T2.Quantity) AS TotalItems,
+          AVG(T3.RatingValue) AS AvgRating
+        FROM Receipts T1
+        LEFT JOIN ReceiptItems T2 ON T1.ReceiptId = T2.ReceiptId
+        LEFT JOIN StoreRatings T3 ON T1.StoreId = T3.StoreId AND CAST(T1.PurchaseDate AS DATE) = CAST(T3.RatingDate AS DATE)
+        WHERE
+          T1.StoreId = @storeId
+          AND T1.PurchaseDate >= DATEADD(day, -7, GETDATE())
+        GROUP BY
+          CAST(PurchaseDate AS DATE)
+        ORDER BY
+          SalesDate;
+      `);
+
+    const historicalData = historyResult.recordset.map(record => ({
+      date: record.SalesDate.toISOString().split('T')[0],
+      sales: Number(record.TotalSales).toFixed(2),
+      abv: Number(record.ABV).toFixed(2),
+      abq: Number(record.TotalItems / record.TotalReceipts || 0).toFixed(2),
+      rating: Number(record.AvgRating || 0).toFixed(2),
+    }));
+
+    res.status(200).json({
+      history: historicalData,
+    });
+  } catch (err) {
+    console.error('Error fetching historical data:', err);
+    res.status(500).json({ error: 'Internal server error.' });
+  }
+});
+
+// 3) Create a Stripe Payment Intent
+app.post('/api/create-payment-intent', async (req, res) => {
+  const { amount, currency } = req.body; // amount in smallest unit
+  try {
+    if (!amount || !currency) {
+      return res.status(400).json({ error: 'amount and currency are required' });
+    }
+
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount,
+      currency,
+      automatic_payment_methods: { enabled: true },
+    });
+
+    res.status(200).json({ clientSecret: paymentIntent.client_secret });
+  } catch (err) {
+    console.error('Error creating payment intent:', err);
+    res.status(500).json({ error: 'Failed to create payment intent.' });
+  }
+});
+
+// 4) Save a Complete Checkout Transaction
+app.post('/api/save-checkout', async (req, res) => {
+  const { phoneNumber, name, receiptItems, total, storeId } = req.body;
+  if (!pool) return res.status(500).json({ error: 'Database not connected.' });
+
+  if (!Array.isArray(receiptItems)) {
+    return res.status(400).json({ error: 'receiptItems must be an array' });
+  }
+
+  const transaction = new sql.Transaction(pool);
+  try {
+    await transaction.begin();
+
+    let userId;
+    const userCheck = await transaction
+      .request()
+      .input('phoneNumber', sql.NVarChar, phoneNumber)
+      .query('SELECT UserId FROM Users WHERE PhoneNumber = @phoneNumber');
+
+    if (userCheck.recordset.length > 0) {
+      userId = userCheck.recordset[0].UserId;
+    } else {
+      const userInsert = await transaction
+        .request()
+        .input('name', sql.NVarChar, name || 'Guest')
+        .input('phoneNumber', sql.NVarChar, phoneNumber || null)
+        .query(`
+          INSERT INTO Users (Name, PhoneNumber)
+          VALUES (@name, @phoneNumber);
+          SELECT SCOPE_IDENTITY() as UserId;
+        `);
+      userId = Number(userInsert.recordset[0].UserId);
+    }
+
+    const receiptInsert = await transaction
+      .request()
+      .input('userId', sql.Int, userId)
+      .input('storeId', sql.Int, storeId)
+      .input('totalAmount', sql.Decimal(18, 2), total)
+      .query(`
+        INSERT INTO Receipts (UserId, StoreId, TotalAmount, PurchaseDate)
+        VALUES (@userId, @storeId, @totalAmount, GETDATE());
+        SELECT SCOPE_IDENTITY() as ReceiptId;
+      `);
+
+    const receiptId = Number(receiptInsert.recordset[0].ReceiptId);
+
+    for (const item of receiptItems) {
+      await transaction
+        .request()
+        .input('receiptId', sql.Int, receiptId)
+        .input('itemName', sql.NVarChar, item.name)
+        .input('quantity', sql.Int, item.quantity)
+        .input('pricePerItem', sql.Decimal(18, 2), item.price)
+        .query(`
+          INSERT INTO ReceiptItems (ReceiptId, ItemName, Quantity, PricePerItem)
+          VALUES (@receiptId, @itemName, @quantity, @pricePerItem);
+        `);
+    }
+
+    await transaction.commit();
+    res.status(200).json({ message: 'Transaction and receipt saved successfully!' });
+  } catch (err) {
+    try { await transaction.rollback(); } catch (_) {}
+    console.error('Transaction failed:', err);
+    res.status(500).json({ error: 'Failed to save data. Transaction rolled back.' });
+  }
+});
+
+// 5) Save a Store Rating
+app.post('/api/submit-rating', async (req, res) => {
+  const { storeId, ratingValue } = req.body;
+  if (!pool) return res.status(500).json({ error: 'Database not connected.' });
+
+  // --- ADDED VALIDATION ---
+  if (ratingValue === undefined || ratingValue === null) {
+    return res.status(400).json({ success: false, message: 'Rating value is required.' });
+  }
+
+  try {
+    await pool
+      .request()
+      .input('storeId', sql.Int, storeId)
+      .input('ratingValue', sql.Int, ratingValue) // Ensure value is a number
+      .query(`
+        INSERT INTO StoreRatings (StoreId, RatingValue, RatingDate)
+        VALUES (@storeId, @ratingValue, GETDATE());
+      `);
+
+    res.status(200).json({ success: true, message: 'Rating saved.' });
+  } catch (err) {
+    console.error('Error saving rating:', err);
+    res.status(500).json({ error: 'Failed to save rating.' });
+  }
+});
+
+// =========================
+// Start Server
+// =========================
+app.listen(port, () => {
+  console.log(`🚀 Server running at http://localhost:${port}`);
+});
